@@ -10,7 +10,6 @@ pycache
 DjangoWeatherAlert/.env
 .ruff_cache
 __pycache__
-requirements.txt
 .git
 .github
 .idea

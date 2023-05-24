@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  postgresql:
+    restart: always
+    container_name: weather_db
+    image: postgres:15.1-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345
+      - POSTGRES_DB=weatherdb
+    volumes:
+      - drf_db_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+  django:
+    image: django_weather_alert
+    restart: always
+    container_name: dwa_app
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: bash -c "python /usr/src/dwa_rest/manage.py makemigrations --noinput &&
+      python /usr/src/dwa_rest/manage.py migrate --noinput &&
+      python /usr/src/dwa_rest/manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/usr/src/dwa_rest
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgresql
+  redis:
+    image: redis
+    container_name: dwa_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    depends_on:
+      - django
+  celery:
+    build: .
+    image: celery
+    container_name: dwa_celery
+    restart: always
+    command: celery -A DjangoWeatherAlert worker -l INFO
+    volumes:
+      - .:/usr/src/dwa_rest
+    depends_on:
+      - django
+      - redis
+  celery-beat:
+    build: .
+    image: celery-beat
+    restart: always
+    container_name: dwr_celery_beat
+    command: celery -A DjangoWeatherAlert beat -l INFO
+    volumes:
+      - .:/usr/src/dwr_rest
+    depends_on:
+      - django
+      - redis
+  flower:
+    image: mher/flower
+    restart: always
+    container_name: dwa_flower
+    command: celery flower -A DjangoWeatherAlert--broker=redis://localhost:6379/0
+    volumes:
+      - .:/usr/src/dwa_rest
+    working_dir: /dwa_rest
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis
+      CELERY_RESULT_BACKEND: redis://redis
+    depends_on:
+      - celery
+
+
+volumes:
+  drf_db_data:

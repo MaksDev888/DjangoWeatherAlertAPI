@@ -145,12 +145,12 @@ class FollowListTests(APITestCase):
     def test_create_get_list_follow(self) -> None:
         url = reverse("FollowList:add_follow")
         data = {
-            "city_id":self.city2.id,
-            "send_time_email":3,
+            "city_id": self.city2.id,
+            "send_time_email": 3,
         }
         json_data = json.dumps(data)
         response = self.client.post(url, data=json_data, content_type="application/json")
-        self.assertEqual(response.data, {"city_id":self.city2.id,"send_time_email":3})
+        self.assertEqual(response.data, {"city_id": self.city2.id, "send_time_email": 3})
 
         url = reverse("FollowList:followlist-list")
         response = self.client.get(url)
@@ -158,7 +158,6 @@ class FollowListTests(APITestCase):
         serialzier = FollowListSerializers(followlist, many=True)
         self.assertEqual(response.data, serialzier.data)
         self.assertEqual(response.status_code, 200)
-
 
         url = reverse("FollowList:follow_user_list")
         response = self.client.get(url)
@@ -175,5 +174,3 @@ class FollowListTests(APITestCase):
         serialzier = FollowListSerializers(followlist)
         self.assertEqual(response.data, serialzier.data)
         self.assertEqual(response.status_code, 200)
-
-
